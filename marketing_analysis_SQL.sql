@@ -19,29 +19,34 @@ select * from cost_dataset;
 -- уникальные установки
 SELECT campaign, count(DISTINCT customer_user_id) AS installs
 FROM in_app_event
-GROUP BY campaign;
+GROUP BY campaign
+ORDER BY campaign asc;
 
 -- уникальные покупатели
 SELECT campaign, COUNT(DISTINCT customer_user_id) AS unique_buyers
 FROM in_app_event
 WHERE event_name IN ('purchase')
-GROUP BY campaign;
+GROUP BY campaign
+ORDER BY campaign asc;
 
 -- количество платежей
 SELECT campaign, COUNT(event_name) AS purchases
 FROM in_app_event
 WHERE event_name IN ('purchase')
-GROUP BY campaign;
+GROUP BY campaign
+ORDER BY campaign asc;
 
 -- суммарные затраты на проведение рекламных кампаний
 SELECT  campaign, SUM(cost_usd) AS cost
 FROM cost_dataset
-GROUP BY campaign;
+GROUP BY campaign
+ORDER BY campaign asc;
 
 -- суммарная выручка привлеченных пользователей
 SELECT campaign, ROUND(SUM(new_gross_rev), 2) AS net_revenue
 FROM in_app_event
-GROUP BY campaign;
+GROUP BY campaign
+ORDER BY campaign asc;
 
 -- ЗАДАНИЕ 2
 -- конверсия по кампаниям
@@ -54,9 +59,9 @@ SELECT
 	count(DISTINCT customer_user_id) as all_users
 FROM in_app_event
 GROUP BY campaign
-ORDER BY conversion_rate desc, all_users desc;
+ORDER BY campaign asc, all_users desc;
 
--- cpa по кампаниям
+-- cpa в покупку по кампаниям
 SELECT 
 	e.campaign, 
 	ROUND(c.cost/COUNT(DISTINCT e.customer_user_id), 2)  AS cpa_rate
@@ -64,12 +69,14 @@ FROM in_app_event e
 JOIN (
   SELECT 
 	campaign, 
-	SUM(cost) AS cost
+	SUM(cost_usd) AS cost
   FROM cost_dataset
   GROUP BY campaign
 ) c
 ON e.campaign = c.campaign
-GROUP BY campaign;
+WHERE e.event_name = 'purchase'
+GROUP BY campaign
+ORDER BY campaign asc;
 
 
 -- ROI
@@ -84,14 +91,16 @@ JOIN (
   GROUP BY campaign
 ) c
 ON e.campaign = c.campaign
-GROUP BY campaign;
+GROUP BY campaign
+ORDER BY campaign asc;
 
 -- ARPU по кампаниям
 SELECT
 	campaign,
 	ROUND((sum(new_gross_rev)/COUNT(DISTINCT customer_user_id)), 2) AS ARPU
 FROM in_app_event
-GROUP BY campaign;
+GROUP BY campaign
+ORDER BY campaign asc;
 
 -- ЗАДАНИЕ 3
 -- страна
@@ -107,7 +116,7 @@ FROM in_app_event
 GROUP BY country_code
 ORDER BY conversion_rate desc, all_users desc;
 
--- cpa по странам
+-- cpa в покупку по странам
 SELECT 
 	e.country_code, 
 	ROUND(c.cost/COUNT(DISTINCT e.customer_user_id), 2)  AS cpa_rate
@@ -115,19 +124,22 @@ FROM in_app_event e
 JOIN (
 SELECT 
 	country_code, 
-	SUM(cost) AS cost
+	SUM(cost_usd) AS cost
 FROM cost_dataset
 GROUP BY country_code
 ) c
 ON e.country_code = c.country_code
-GROUP BY e.country_code;
+WHERE e.event_name = 'purchase'
+GROUP BY e.country_code
+ORDER BY cpa_rate desc;
 
 -- ARPU по странам
 SELECT
 	country_code,
 	ROUND(sum(new_gross_rev)/(COUNT(DISTINCT customer_user_id)), 2) AS ARPU
 FROM in_app_event
-GROUP BY country_code;
+GROUP BY country_code
+ORDER BY ARPU desc;
 
 -- ROI по странам
 SELECT e.country_code,
@@ -141,7 +153,8 @@ JOIN (
   GROUP BY country_code
 ) c
 ON e.country_code = c.country_code
-GROUP BY country_code;
+GROUP BY country_code
+ORDER BY ROI_rate desc;
 
 -- платформа
 -- конверсия по платформам
@@ -154,9 +167,9 @@ platform_id,
 	count(DISTINCT customer_user_id) as all_users
 FROM in_app_event
 GROUP BY platform_id
-ORDER BY conversion_rate desc, all_users desc;
+ORDER BY platform_id desc, all_users desc;
 
--- cpa по платформам
+-- cpa в покупку по платформам
 SELECT 
 	e.platform_id, 
 	ROUND((c.cost/COUNT(DISTINCT e.customer_user_id)), 2)  AS cpa_rate
@@ -164,19 +177,22 @@ FROM in_app_event e
 JOIN (
   SELECT 
 	LOWER(platform) as platform, 
-	SUM(cost) AS cost
+	SUM(cost_usd) AS cost
   FROM cost_dataset
   GROUP BY LOWER(platform)
 ) c
 ON e.platform_id = c.platform
-GROUP BY e.platform_id, c.cost;
+WHERE e.event_name = 'purchase'
+GROUP BY e.platform_id, c.cost
+ORDER BY platform_id desc;
 
 -- ARPU по платформам
 SELECT
 	platform_id, 
 	ROUND((sum(new_gross_rev)/COUNT(DISTINCT customer_user_id)), 2) AS ARPU
 FROM in_app_event
-GROUP BY platform_id;
+GROUP BY platform_id
+ORDER BY platform_id desc;
 
 -- ROI по платформам
 SELECT e.platform_id,
@@ -190,7 +206,8 @@ JOIN (
   GROUP BY platform
 ) c
 ON e.platform_id = c.platform
-GROUP BY platform_id;
+GROUP BY platform_id
+ORDER BY platform_id desc;
 
 -- канал
 -- конверсия по каналам
@@ -203,9 +220,9 @@ SELECT
 	count(DISTINCT customer_user_id) as all_users
 FROM in_app_event
 GROUP BY media_channel
-ORDER BY conversion_rate desc, all_users desc;
+ORDER BY media_channel desc, all_users desc;
 
--- cpa по каналам
+-- cpa в покупку по каналам
 SELECT 
 	e.media_channel, 
 	ROUND((c.cost/COUNT(DISTINCT e.customer_user_id)), 2)  AS cpa_rate
@@ -213,19 +230,22 @@ FROM in_app_event e
 JOIN (
   SELECT 
 	media_channel, 
-	SUM(cost) AS cost
+	SUM(cost_usd) AS cost
   FROM cost_dataset
   GROUP BY media_channel
 ) c
 ON e.media_channel = c.media_channel
-GROUP BY media_channel;
+WHERE e.event_name = 'purchase'
+GROUP BY media_channel
+ORDER BY media_channel desc;
 
 -- ARPU по каналам
 SELECT
 	media_channel,
 	ROUND((sum(gross_event_revenue_usd)/COUNT(DISTINCT customer_user_id)), 2) AS ARPU
 FROM in_app_event
-GROUP BY media_channel;
+GROUP BY media_channel
+ORDER BY media_channel desc;
 
 -- ROI по каналам
 SELECT e.media_channel,
@@ -239,4 +259,5 @@ JOIN (
   GROUP BY media_channel
 ) c
 ON e.media_channel = c.media_channel
-GROUP BY media_channel;
+GROUP BY media_channel
+ORDER BY media_channel desc;
